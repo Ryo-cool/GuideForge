@@ -1,0 +1,57 @@
+---
+description: フロントエンドの開発規約とスタイルガイド
+globs: ["frontend/**/*.ts", "frontend/**/*.tsx"]
+---
+
+# GuideForge フロントエンド開発規約
+
+## 基本方針
+
+GuideForgeのフロントエンド開発では、TypeScript、React、Next.js App Router、Tailwind CSSを使用します。以下の規約に従ってコードを書いてください。
+
+## コーディングスタイル
+
+### TypeScript
+- インデント: 2スペース
+- クォート: シングルクォート
+- セミコロン: 必須
+- trailing comma: ES5準拠
+- bracket spacing: true
+- アロー関数の括弧: 引数が1つの場合は省略可（avoid）
+
+### コンポーネント構造
+- コンポーネントはPascalCaseで命名
+- 場所: `frontend/src/components`
+- 構造:
+  - エクスポートされるコンポーネント
+  - サブコンポーネント
+  - ヘルパー関数
+  - 静的コンテンツ
+  - 型定義
+
+### ページ
+- 場所: `frontend/src/app`
+- 命名: kebab-case
+
+### フック
+- 場所: `frontend/src/hooks`
+- 命名: camelCase、「use」プレフィックス必須
+
+### サービス
+- 場所: `frontend/src/services`
+- 命名: camelCase、「Service」サフィックス
+
+### 型定義
+- 場所: `frontend/src/types`
+- 命名: PascalCase
+
+## UIとスタイリング
+- Tailwind CSSを使用してスタイリング
+- モバイルファーストのレスポンシブデザイン
+- UIコンポーネントはシンプルで再利用可能なものを心がける
+
+## パフォーマンス最適化
+- `use client`指示子の使用を最小限に抑える
+- React Server Components (RSC)を活用
+- 動的インポートを適切に使用
+- 画像最適化を行う 

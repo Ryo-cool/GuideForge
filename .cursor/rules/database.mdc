@@ -1,0 +1,62 @@
+---
+description: データベース設計とSQL構文の規約
+globs: ["database/**/*.sql", "backend/**/*repository*.go"]
+---
+
+# GuideForge データベース規約
+
+## 基本方針
+
+GuideForgeのデータベースはPostgreSQLを使用します。以下の規約に従ってSQLを書き、データベース設計を行ってください。
+
+## テーブル設計
+
+### 命名規則
+- テーブル名: 複数形、snake_case（例: users, manuals, steps）
+- カラム名: snake_case
+- 主キー: id
+- 外部キー: 参照テーブル名の単数形_id（例: user_id, manual_id）
+
+### 基本カラム
+すべてのテーブルに以下のカラムを含める：
+- id: SERIAL PRIMARY KEY
+- created_at: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+- updated_at: TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+
+### リレーション
+- 適切な外部キー制約を設定
+- ON DELETE、ON UPDATEの挙動を明示的に指定
+- インデックスを適切に設定
+
+## SQLスタイル
+
+### SQLキーワード
+- キーワードは大文字（例: SELECT, INSERT, UPDATE）
+- テーブル名、カラム名は小文字
+- 複雑なクエリは適切に改行とインデントを入れる
+
+### クエリパフォーマット
+```sql
+SELECT 
+    column1,
+    column2,
+    column3
+FROM 
+    table_name
+WHERE 
+    condition
+ORDER BY 
+    column1;
+```
+
+## マイグレーション
+
+- データベースの変更はマイグレーションファイルに記録
+- マイグレーションファイルは連番管理
+- ロールバック可能な設計にする
+
+## 初期化スクリプト
+
+- 初期データは`database/init`ディレクトリに配置
+- スクリプトは実行順序を考慮して連番付け
+- コメントで処理内容を明記 
