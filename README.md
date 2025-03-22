@@ -54,7 +54,7 @@ GuideForge は、業務マニュアルや手順書を簡単に作成・管理で
 1. リポジトリをクローンします
 
 ```bash
-git clone https://github.com/yourusername/guideforge.git
+git clone https://github.com/Ryo-cool/guideforge.git
 cd guideforge
 ```
 

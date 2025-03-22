@@ -3,10 +3,10 @@ package api
 import (
 	"net/http"
 
+	"github.com/Ryo-cool/guideforge/internal/api/handlers"
+	"github.com/Ryo-cool/guideforge/internal/auth"
+	"github.com/Ryo-cool/guideforge/internal/config"
 	"github.com/labstack/echo/v4"
-	"github.com/yourusername/guideforge/internal/api/handlers"
-	"github.com/yourusername/guideforge/internal/auth"
-	"github.com/yourusername/guideforge/internal/config"
 )
 
 // RegisterRoutes はアプリケーションのルートを設定する
