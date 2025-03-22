@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"strconv"
+
 	"github.com/Ryo-cool/guideforge/internal/config"
 	"github.com/Ryo-cool/guideforge/internal/models"
 	"github.com/Ryo-cool/guideforge/internal/repository"
@@ -91,7 +93,7 @@ func (s *UserService) UpdateProfileImage(userID uint, filename string, fileData 
 
 	// 新しい画像を保存
 	ext := filepath.Ext(filename)
-	newFilename := filepath.Join("profiles", "user_"+string(userID)+ext)
+	newFilename := filepath.Join("profiles", "user_"+strconv.FormatUint(uint64(userID), 10)+ext)
 	newPath := filepath.Join(s.config.UploadDir, newFilename)
 
 	// ディレクトリ作成
