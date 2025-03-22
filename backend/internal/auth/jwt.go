@@ -4,17 +4,22 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/Ryo-cool/guideforge/internal/config"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/yourusername/guideforge/internal/config"
 )
 
 // JWTClaims はJWTのクレームを表す構造体
 type JWTClaims struct {
 	UserID uint   `json:"user_id"`
 	Email  string `json:"email"`
-	jwt.RegisteredClaims
+	jwt.StandardClaims
+}
+
+// Valid はjwt.Claimsインターフェースの実装
+func (c *JWTClaims) Valid() error {
+	return c.StandardClaims.Valid()
 }
 
 // GenerateToken はJWTトークンを生成する
@@ -26,9 +31,9 @@ func GenerateToken(userID uint, email string, cfg *config.Config) (string, error
 	claims := &JWTClaims{
 		UserID: userID,
 		Email:  email,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+			IssuedAt:  time.Now().Unix(),
 		},
 	}
 

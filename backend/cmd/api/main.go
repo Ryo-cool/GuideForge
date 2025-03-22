@@ -4,11 +4,11 @@ import (
 	"log"
 	"os"
 
+	"github.com/Ryo-cool/guideforge/internal/api"
+	"github.com/Ryo-cool/guideforge/internal/config"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/yourusername/guideforge/internal/api"
-	"github.com/yourusername/guideforge/internal/config"
 )
 
 func main() {
