@@ -10,6 +10,7 @@ import (
 	"github.com/Ryo-cool/guideforge/internal/services"
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
+	_ "github.com/lib/pq" // PostgreSQLドライバ
 )
 
 // RegisterRoutes はアプリケーションのルートを設定する
@@ -19,18 +20,21 @@ func RegisterRoutes(e *echo.Echo, cfg *config.Config, db *sqlx.DB) {
 	userRepo := repository.NewUserRepository(repo)
 	
 	// サービスの初期化
+	userService := services.NewUserService(userRepo, cfg)
 	authService := services.NewAuthService(userRepo, cfg)
 	
 	// ハンドラーの初期化
 	authHandler := handlers.NewAuthHandler(authService, cfg)
+	userHandler := handlers.NewUserHandlerContext(authService, userService)
 
 	// APIのベースパス
 	api := e.Group("/api")
 
 	// ヘルスチェック
 	api.GET("/health", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{
-			"status": "ok",
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"success": true,
+			"status":  "ok",
 		})
 	})
 
@@ -47,6 +51,9 @@ func RegisterRoutes(e *echo.Echo, cfg *config.Config, db *sqlx.DB) {
 	// ユーザー関連
 	authenticated.GET("/users/me", authHandler.GetCurrentUser)
 	authenticated.PUT("/users/me", authHandler.UpdateCurrentUser)
+	authenticated.PUT("/users/me/password", userHandler.ChangePassword)
+	authenticated.POST("/users/me/profile-image", userHandler.UpdateProfileImage)
+	authenticated.DELETE("/users/me", userHandler.DeleteUser)
 
 	// マニュアル関連
 	authenticated.GET("/manuals", handlers.ListManuals)

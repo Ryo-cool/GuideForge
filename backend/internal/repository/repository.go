@@ -36,6 +36,11 @@ func ConnectDB(cfg *config.Config) (*sqlx.DB, error) {
 	return db, nil
 }
 
+// NewRepositoryWithDB は既存のDB接続を使用して新しいリポジトリインスタンスを作成
+func NewRepositoryWithDB(db *sqlx.DB) *Repository {
+	return &Repository{db: db}
+}
+
 // Close はデータベース接続を閉じる
 func (r *Repository) Close() error {
 	return r.db.Close()
