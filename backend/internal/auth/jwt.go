@@ -54,11 +54,38 @@ func JWTMiddleware(cfg *config.Config) echo.MiddlewareFunc {
 	config := middleware.JWTConfig{
 		Claims:     &JWTClaims{},
 		SigningKey: []byte(cfg.JWTSecret),
+		TokenLookup: "header:Authorization,query:token,cookie:token",
+		AuthScheme:  "Bearer",
 		ErrorHandler: func(err error) error {
-			return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
+			return echo.NewHTTPError(http.StatusUnauthorized, map[string]interface{}{
+				"success": false,
+				"error":   "Unauthorized access",
+				"message": err.Error(),
+			})
 		},
 	}
 	return middleware.JWTWithConfig(config)
+}
+
+// RequireRole は特定のロールを要求するミドルウェア（将来の拡張用）
+func RequireRole(role string) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			// JWTからクレームを取得
+			user := c.Get("user").(*jwt.Token)
+			claims := user.Claims.(*JWTClaims)
+
+			// 現在はロールの実装はないが、将来的には以下のようにロールチェックを実装可能
+			// if claims.Role != role {
+			// 	return echo.NewHTTPError(http.StatusForbidden, "insufficient privileges")
+			// }
+
+			// ユーザーIDをコンテキストに格納しておく（便利のため）
+			c.Set("userID", claims.UserID)
+
+			return next(c)
+		}
+	}
 }
 
 // GetUserIDFromToken はJWTトークンからユーザーIDを取得する

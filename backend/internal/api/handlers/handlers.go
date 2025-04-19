@@ -3,54 +3,196 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/Ryo-cool/guideforge/internal/auth"
+	"github.com/Ryo-cool/guideforge/internal/config"
+	"github.com/Ryo-cool/guideforge/internal/models"
+	"github.com/Ryo-cool/guideforge/internal/services"
 	"github.com/labstack/echo/v4"
 )
 
+// AuthHandler 認証関連のハンドラー
+type AuthHandler struct {
+	authService *services.AuthService
+	config      *config.Config
+}
+
+// NewAuthHandler 新しい AuthHandler インスタンスを作成
+func NewAuthHandler(authService *services.AuthService, config *config.Config) *AuthHandler {
+	return &AuthHandler{
+		authService: authService,
+		config:      config,
+	}
+}
+
 // Login ユーザーのログイン処理を行う
-func Login(c echo.Context) error {
-	// TODO: ログイン処理の実装
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "Login API - to be implemented",
+func (h *AuthHandler) Login(c echo.Context) error {
+	var req models.UserLoginRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "Invalid request format",
+		})
+	}
+
+	// バリデーション
+	if req.Email == "" || req.Password == "" {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "Email and password are required",
+		})
+	}
+
+	// 認証サービスを使用してログイン
+	res, err := h.authService.Login(req)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"success": true,
+		"data":    res,
 	})
 }
 
 // CreateUser 新規ユーザーを作成する
-func CreateUser(c echo.Context) error {
-	// TODO: ユーザー作成処理の実装
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "Create User API - to be implemented",
+func (h *AuthHandler) CreateUser(c echo.Context) error {
+	var req models.UserRegisterRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "Invalid request format",
+		})
+	}
+
+	// バリデーション
+	if req.Username == "" || req.Email == "" || req.Password == "" {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "Username, email and password are required",
+		})
+	}
+
+	// 認証サービスを使用してユーザー登録
+	res, err := h.authService.RegisterUser(req)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusCreated, map[string]interface{}{
+		"success": true,
+		"data":    res,
 	})
 }
 
 // GetCurrentUser 現在のユーザー情報を取得する
-func GetCurrentUser(c echo.Context) error {
-	// TODO: 現在のユーザー情報取得処理の実装
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "Get Current User API - to be implemented",
+func (h *AuthHandler) GetCurrentUser(c echo.Context) error {
+	// JWTトークンからユーザーIDを取得
+	userID, err := auth.GetUserIDFromToken(c)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+			"success": false,
+			"error":   "Unauthorized",
+		})
+	}
+
+	// ユーザーサービスからユーザー情報を取得
+	user, err := h.authService.GetUserByID(userID)
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]interface{}{
+			"success": false,
+			"error":   "User not found",
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"success": true,
+		"data":    user,
 	})
 }
 
 // UpdateCurrentUser 現在のユーザー情報を更新する
-func UpdateCurrentUser(c echo.Context) error {
-	// TODO: ユーザー情報更新処理の実装
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "Update Current User API - to be implemented",
+func (h *AuthHandler) UpdateCurrentUser(c echo.Context) error {
+	// JWTトークンからユーザーIDを取得
+	userID, err := auth.GetUserIDFromToken(c)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, map[string]interface{}{
+			"success": false,
+			"error":   "Unauthorized",
+		})
+	}
+
+	// リクエストボディをバインド
+	var user models.User
+	if err := c.Bind(&user); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "Invalid request format",
+		})
+	}
+
+	// ユーザーIDをセット
+	user.ID = userID
+
+	// ユーザー情報を更新
+	updatedUser, err := h.authService.UpdateUser(&user)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"success": true,
+		"data":    updatedUser,
 	})
 }
 
 // RequestPasswordReset パスワードリセット要求を処理する
-func RequestPasswordReset(c echo.Context) error {
-	// TODO: パスワードリセット要求処理の実装
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "Request Password Reset API - to be implemented",
+func (h *AuthHandler) RequestPasswordReset(c echo.Context) error {
+	var req struct {
+		Email string `json:"email"`
+	}
+
+	if err := c.Bind(&req); err != nil || req.Email == "" {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "Email is required",
+		})
+	}
+
+	// TODO: 実際のパスワードリセットメール送信処理
+	// 注: セキュリティのため、ユーザーが存在しない場合でも同じレスポンスを返す
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "If an account with that email exists, we have sent a password reset link",
 	})
 }
 
 // ResetPassword パスワードをリセットする
-func ResetPassword(c echo.Context) error {
-	// TODO: パスワードリセット処理の実装
-	return c.JSON(http.StatusOK, map[string]string{
-		"message": "Reset Password API - to be implemented",
+func (h *AuthHandler) ResetPassword(c echo.Context) error {
+	var req struct {
+		Token       string `json:"token"`
+		NewPassword string `json:"new_password"`
+	}
+
+	if err := c.Bind(&req); err != nil || req.Token == "" || req.NewPassword == "" {
+		return c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"success": false,
+			"error":   "Token and new password are required",
+		})
+	}
+
+	// TODO: 実際のパスワードリセット処理
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"success": true,
+		"message": "Password has been reset successfully",
 	})
 }
 

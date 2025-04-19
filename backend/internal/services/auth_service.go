@@ -25,6 +25,63 @@ func NewAuthService(userRepo *repository.UserRepository, cfg *config.Config) *Au
 	}
 }
 
+// GetUserByID はユーザーIDからユーザー情報を取得する
+func (s *AuthService) GetUserByID(userID uint) (*models.UserResponse, error) {
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.UserResponse{
+		ID:           user.ID,
+		Username:     user.Username,
+		Email:        user.Email,
+		ProfileImage: user.ProfileImage,
+		CreatedAt:    user.CreatedAt,
+		UpdatedAt:    user.UpdatedAt,
+	}, nil
+}
+
+// UpdateUser はユーザー情報を更新する
+func (s *AuthService) UpdateUser(user *models.User) (*models.UserResponse, error) {
+	// 既存ユーザーの取得
+	existingUser, err := s.userRepo.GetByID(user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 更新するフィールドのみ設定
+	if user.Username != "" {
+		existingUser.Username = user.Username
+	}
+	if user.ProfileImage != "" {
+		existingUser.ProfileImage = user.ProfileImage
+	}
+
+	// メールアドレス変更の場合は重複チェック
+	if user.Email != "" && user.Email != existingUser.Email {
+		existingUserWithEmail, _ := s.userRepo.GetByEmail(user.Email)
+		if existingUserWithEmail != nil {
+			return nil, errors.New("email already registered")
+		}
+		existingUser.Email = user.Email
+	}
+
+	// ユーザー情報更新
+	if err := s.userRepo.Update(existingUser); err != nil {
+		return nil, err
+	}
+
+	return &models.UserResponse{
+		ID:           existingUser.ID,
+		Username:     existingUser.Username,
+		Email:        existingUser.Email,
+		ProfileImage: existingUser.ProfileImage,
+		CreatedAt:    existingUser.CreatedAt,
+		UpdatedAt:    existingUser.UpdatedAt,
+	}, nil
+}
+
 // RegisterUser は新しいユーザーを登録する
 func (s *AuthService) RegisterUser(req models.UserRegisterRequest) (*models.AuthResponse, error) {
 	// 既存ユーザーの確認

@@ -6,11 +6,24 @@ import (
 	"github.com/Ryo-cool/guideforge/internal/api/handlers"
 	"github.com/Ryo-cool/guideforge/internal/auth"
 	"github.com/Ryo-cool/guideforge/internal/config"
+	"github.com/Ryo-cool/guideforge/internal/repository"
+	"github.com/Ryo-cool/guideforge/internal/services"
+	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
 )
 
 // RegisterRoutes はアプリケーションのルートを設定する
-func RegisterRoutes(e *echo.Echo, cfg *config.Config) {
+func RegisterRoutes(e *echo.Echo, cfg *config.Config, db *sqlx.DB) {
+	// リポジトリの初期化
+	repo := repository.NewRepository(db)
+	userRepo := repository.NewUserRepository(repo)
+	
+	// サービスの初期化
+	authService := services.NewAuthService(userRepo, cfg)
+	
+	// ハンドラーの初期化
+	authHandler := handlers.NewAuthHandler(authService, cfg)
+
 	// APIのベースパス
 	api := e.Group("/api")
 
@@ -22,18 +35,18 @@ func RegisterRoutes(e *echo.Echo, cfg *config.Config) {
 	})
 
 	// 認証不要のエンドポイント
-	api.POST("/login", handlers.Login)
-	api.POST("/users", handlers.CreateUser)
-	api.POST("/password/reset", handlers.RequestPasswordReset)
-	api.PUT("/password/reset", handlers.ResetPassword)
+	api.POST("/login", authHandler.Login)
+	api.POST("/users", authHandler.CreateUser)
+	api.POST("/password/reset", authHandler.RequestPasswordReset)
+	api.PUT("/password/reset", authHandler.ResetPassword)
 
 	// JWT認証が必要なエンドポイント
 	authenticated := api.Group("")
 	authenticated.Use(auth.JWTMiddleware(cfg))
 
 	// ユーザー関連
-	authenticated.GET("/users/me", handlers.GetCurrentUser)
-	authenticated.PUT("/users/me", handlers.UpdateCurrentUser)
+	authenticated.GET("/users/me", authHandler.GetCurrentUser)
+	authenticated.PUT("/users/me", authHandler.UpdateCurrentUser)
 
 	// マニュアル関連
 	authenticated.GET("/manuals", handlers.ListManuals)
