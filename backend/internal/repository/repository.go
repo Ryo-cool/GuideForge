@@ -14,7 +14,12 @@ type Repository struct {
 }
 
 // NewRepository は新しいリポジトリインスタンスを作成
-func NewRepository(cfg *config.Config) (*Repository, error) {
+func NewRepository(db *sqlx.DB) *Repository {
+	return &Repository{db: db}
+}
+
+// ConnectDB はデータベースに接続する
+func ConnectDB(cfg *config.Config) (*sqlx.DB, error) {
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBSSLMode)
 
@@ -28,7 +33,7 @@ func NewRepository(cfg *config.Config) (*Repository, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	return &Repository{db: db}, nil
+	return db, nil
 }
 
 // NewRepositoryWithDB は既存のDB接続を使用して新しいリポジトリインスタンスを作成

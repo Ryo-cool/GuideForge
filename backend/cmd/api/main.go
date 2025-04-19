@@ -6,6 +6,7 @@ import (
 
 	"github.com/Ryo-cool/guideforge/internal/api"
 	"github.com/Ryo-cool/guideforge/internal/config"
+	"github.com/Ryo-cool/guideforge/internal/repository"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -31,8 +32,15 @@ func main() {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
+	// データベース接続
+	db, err := repository.ConnectDB(cfg)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
+
 	// ルートの設定
-	api.RegisterRoutes(e, cfg)
+	api.RegisterRoutes(e, cfg, db)
 
 	// サーバー起動
 	port := os.Getenv("PORT")
